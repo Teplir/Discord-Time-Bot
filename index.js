@@ -6,16 +6,16 @@ const client = new Client({
 });
 
 // ===== CONFIGURATION - EDIT THESE TWO LINES =====
-const CHANNEL_ID = 'YOUR_CHANNEL_ID_HERE';     // Replace with your Discord channel ID
-const UPDATE_MINUTES = 5;                      // How often to update (in minutes)
+const CHANNEL_ID = '1500561425838379118';     // Replace with your Discord channel ID
+const UPDATE_MINUTES = 1;                      // How often to update (in minutes)
 // ================================================
 
 // Spawn offsets (minutes from current time)
 const OFFSETS = {
-    legendary: 0,
-    mythical: 15,
+    legendary: 5,
+    mythical: 60,
     luckyBlock: 30,
-    amethystEgg: 60
+    amethystEgg: 1440
 };
 
 let messageId = null;
