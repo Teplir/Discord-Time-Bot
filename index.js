@@ -12,9 +12,9 @@ const UPDATE_MINUTES = 1;                      // Change to your desired minutes
 // Spawn offsets (minutes from now)
 const OFFSETS = {
     legendary: 5,
-    mythical: 15,
+    mythical: 60,
     luckyBlock: 30,
-    amethystEgg: 60
+    amethystEgg: 1440
 };
 
 let messageId = null;
