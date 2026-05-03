@@ -101,9 +101,19 @@ app.listen(port, '0.0.0.0');
 // ------------------------------------
 
 client.once('ready', () => {
+    client.once('ready', () => {
     console.log(`✅ Bot online: ${client.user.tag}`);
-    setTimeout(updateMessage, 2000);
-    setInterval(updateMessage, UPDATE_MINUTES * 60 * 1000);
+    console.log(`📝 Looking for channel ID: ${CHANNEL_ID}`);
+    
+    const testChannel = client.channels.cache.get(CHANNEL_ID);
+    if (!testChannel) {
+        console.error(`❌ Channel ${CHANNEL_ID} not found!`);
+        console.log(`📋 Available channels: ${client.channels.cache.map(c => `${c.name} (${c.id})`).join(', ')}`);
+    } else {
+        console.log(`✅ Found channel: ${testChannel.name}`);
+        setTimeout(updateMessage, 2000);
+        setInterval(updateMessage, UPDATE_MINUTES * 60 * 1000);
+    }
 });
 
 const TOKEN = process.env.DISCORD_BOT_TOKEN;
