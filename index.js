@@ -4,7 +4,7 @@ const client = new Client({
 });
 
 // ===== EDIT THESE THREE LINES =====
-const TOKEN = process.env.MTUwMDU5NDk2MzQ0NzI4MzgzNw.GoJ-IN.oabt59tR1Yy3oeEZUFNO2zcohrDVpG387vUYjU;  // Render will add this automatically
+const TOKEN = process.env.DISCORD_BOT_TOKEN;  // Render will add this automatically
 const CHANNEL_ID = '1500561425838379118';     // Paste your channel ID
 const UPDATE_MINUTES = 1;                      // Change to your desired minutes
 // ==================================
