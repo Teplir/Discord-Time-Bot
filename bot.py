@@ -11,17 +11,17 @@ UPDATE_MINUTES = 1
 # ========================
 
 INTERVALS = {
-    'Amethyst Egg': 1440,  # 24 hours
-    'Legendary': 5,        # 5 minutes
-    'Mythical': 60,        # 60 minutes
-    'Lucky Block': 30      # 30 minutes
+    'Amethyst Egg': 1440,
+    'Legendary': 5,
+    'Mythical': 60,
+    'Lucky Block': 30
 }
 
 ANCHOR_TIMES = {
-    'Amethyst Egg': {'hour': 17, 'minute': 0},   # 5:00 PM
-    'Legendary': {'hour': 18, 'minute': 0},      # 6:00 PM
-    'Mythical': {'hour': 18, 'minute': 0},       # 6:00 PM
-    'Lucky Block': {'hour': 18, 'minute': 0}     # 6:00 PM
+    'Amethyst Egg': {'hour': 17, 'minute': 0},
+    'Legendary': {'hour': 18, 'minute': 0},
+    'Mythical': {'hour': 18, 'minute': 0},
+    'Lucky Block': {'hour': 18, 'minute': 0}
 }
 
 intents = discord.Intents.default()
@@ -75,13 +75,11 @@ def home():
 def run_web_server():
     app.run(host='0.0.0.0', port=10000)
 
-# Global variables for message management
 message_id = None
-update_task = None
 
 @client.event
 async def on_ready():
-    global message_id, update_task
+    global message_id
     print(f"✅ Bot online: {client.user.name}")
     print(f"📝 Channel ID: {CHANNEL_ID}")
     
@@ -95,7 +93,6 @@ async def on_ready():
     
     print(f"✅ Found channel: #{channel.name}")
     
-    # Send initial message
     try:
         msg = await channel.send(create_message())
         message_id = msg.id
@@ -104,7 +101,6 @@ async def on_ready():
         print(f"Error sending message: {e}")
         return
     
-    # Start update loop
     while True:
         await asyncio.sleep(UPDATE_MINUTES * 60)
         try:
@@ -118,7 +114,6 @@ async def on_ready():
 thread = Thread(target=run_web_server, daemon=True)
 thread.start()
 
-# Run bot
 token = os.getenv('DISCORD_BOT_TOKEN')
 if not token:
     print("❌ DISCORD_BOT_TOKEN environment variable not set!")
