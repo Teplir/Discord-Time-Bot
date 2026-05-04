@@ -6,11 +6,11 @@ const client = new Client({
 });
 
 // ===== CONFIGURATION =====
-const CHANNEL_ID = '1500641255233814718';  // Replace with your channel ID
-const UPDATE_MINUTES = 1;  // Updates every minute for accuracy
+const CHANNEL_ID = '1500641255233814718';  // Your channel ID
+const UPDATE_MINUTES = 1;  // Updates every minute
+// ==================================
 
-// Base anchor times (when the daily cycle starts)
-// All times are in 24-hour format (18:00 = 6:00 PM)
+// Base anchor times (24-hour format)
 const ANCHOR_TIMES = {
     legendary: { hour: 18, minute: 0 },      // 6:00 PM
     mythical: { hour: 18, minute: 0 },       // 6:00 PM
@@ -89,6 +89,10 @@ async function updateMessage() {
     const channel = client.channels.cache.get(CHANNEL_ID);
     if (!channel) {
         console.error(`❌ Channel ${CHANNEL_ID} not found!`);
+        console.log(`📋 Available channels:`);
+        client.channels.cache.forEach(ch => {
+            console.log(`   ${ch.name} (${ch.id})`);
+        });
         return;
     }
     
@@ -100,7 +104,7 @@ async function updateMessage() {
         } else {
             const msg = await channel.send(getMessage());
             messageId = msg.id;
-            console.log('📝 Initial message sent');
+            console.log('📝 Initial message sent! Check Discord!');
         }
     } catch (err) {
         console.error('Error:', err.message);
@@ -115,20 +119,40 @@ app.get('/', (req, res) => res.send('Spawn timer bot running!'));
 app.listen(port, '0.0.0.0', () => console.log(`Web server on port ${port}`));
 
 // Discord bot ready event
-client.once('ready', () => {
+client.once('ready', async () => {
     console.log(`✅ Bot online: ${client.user.tag}`);
-    console.log(`📝 Channel ID: ${CHANNEL_ID}`);
-    console.log(`⏰ Schedule:`);
-    console.log(`   Amethyst: Every 24 hours starting at 5:00 PM`);
-    console.log(`   Lucky Block: Every 30 minutes starting at 6:00 PM`);
-    console.log(`   Mythical: Every 60 minutes starting at 6:00 PM`);
-    console.log(`   Legendary: Every 5 minutes starting at 6:00 PM`);
+    console.log(`📝 Looking for channel ID: ${CHANNEL_ID}`);
     
-    setTimeout(updateMessage, 2000);
+    // Force a channel check
+    const testChannel = client.channels.cache.get(CHANNEL_ID);
+    if (!testChannel) {
+        console.error(`❌ Cannot find channel!`);
+        console.log(`📋 Bot can see these channels:`);
+        client.channels.cache.forEach(ch => {
+            console.log(`   #${ch.name} (${ch.id})`);
+        });
+        return;
+    }
+    
+    console.log(`✅ Found channel: #${testChannel.name}`);
+    
+    // Send a test message
+    try {
+        await testChannel.send("🟢 Spawn timer bot is online and working!");
+        console.log(`✅ Test message sent to #${testChannel.name}`);
+    } catch (err) {
+        console.error(`❌ Cannot send message: ${err.message}`);
+        return;
+    }
+    
+    // Start the timer
+    setTimeout(() => updateMessage(), 3000);
     setInterval(updateMessage, UPDATE_MINUTES * 60 * 1000);
 });
 
-client.on('error', console.error);
+client.on('error', (error) => {
+    console.error('Discord client error:', error);
+});
 
 // Start the bot
 const TOKEN = process.env.DISCORD_BOT_TOKEN;
@@ -136,4 +160,6 @@ if (!TOKEN) {
     console.error('❌ DISCORD_BOT_TOKEN environment variable not set!');
     process.exit(1);
 }
+
+console.log('🔄 Attempting to login to Discord...');
 client.login(TOKEN);
