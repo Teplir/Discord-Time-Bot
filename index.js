@@ -6,48 +6,82 @@ const client = new Client({
 });
 
 // ===== CONFIGURATION =====
-const CHANNEL_ID = '1500561425838379118';     // REPLACE WITH YOUR CHANNEL ID
-const UPDATE_MINUTES = 5;                      // How often to check/update
+const CHANNEL_ID = '1500641255233814718';  // Replace with your channel ID
+const UPDATE_MINUTES = 1;  // Updates every minute for accuracy
 
-// Fixed daily spawn times (EST - Eastern Standard Time)
-const SPAWN_TIMES = {
-    legendary: { hour: 18, minute: 55 },    // 6:55 PM (18:55)
-    mythical: { hour: 19, minute: 0 },      // 7:00 PM (19:00)
-    luckyBlock: { hour: 19, minute: 0 },    // 7:00 PM (19:00)
-    amethystEgg: { hour: 17, minute: 0 }    // 5:00 PM (17:00)
+// Base anchor times (when the daily cycle starts)
+// All times are in 24-hour format (18:00 = 6:00 PM)
+const ANCHOR_TIMES = {
+    legendary: { hour: 18, minute: 0 },      // 6:00 PM
+    mythical: { hour: 18, minute: 0 },       // 6:00 PM
+    luckyBlock: { hour: 18, minute: 0 },     // 6:00 PM
+    amethystEgg: { hour: 17, minute: 0 }     // 5:00 PM
+};
+
+// Intervals in minutes
+const INTERVALS = {
+    legendary: 5,      // every 5 minutes (12 per hour)
+    mythical: 60,      // every 60 minutes (1 per hour)
+    luckyBlock: 30,    // every 30 minutes (2 per hour)
+    amethystEgg: 1440  // every 1440 minutes (1 per day)
 };
 
 let messageId = null;
 
-// Get Unix timestamp for today's spawn time at specified hour/minute
-function getDailyUnixTimestamp(hour, minute) {
+// Calculate next spawn time based on anchor and interval
+function getNextSpawnTime(type) {
     const now = new Date();
-    let spawnTime = new Date(now);
-    spawnTime.setHours(hour, minute, 0, 0);
+    const anchor = ANCHOR_TIMES[type];
+    const interval = INTERVALS[type];
     
-    // If that time already passed today, schedule for tomorrow
-    if (spawnTime < now) {
-        spawnTime.setDate(spawnTime.getDate() + 1);
+    // Create today's anchor time
+    let anchorTime = new Date(now);
+    anchorTime.setHours(anchor.hour, anchor.minute, 0, 0);
+    
+    // If anchor already passed today, use tomorrow's anchor
+    if (anchorTime < now) {
+        anchorTime.setDate(anchorTime.getDate() + 1);
     }
     
-    return Math.floor(spawnTime.getTime() / 1000);
+    // For Amethyst Egg (daily), just return the anchor time
+    if (type === 'amethystEgg') {
+        return Math.floor(anchorTime.getTime() / 1000);
+    }
+    
+    // For interval-based spawns, find the next spawn after now
+    let nextSpawn = new Date(anchorTime);
+    
+    // Add intervals until we find a time > now
+    while (nextSpawn <= now) {
+        nextSpawn = new Date(nextSpawn.getTime() + (interval * 60000));
+    }
+    
+    return Math.floor(nextSpawn.getTime() / 1000);
 }
 
-// Generate the message content
+// Generate the message
 function getMessage() {
-    const legendaryTime = getDailyUnixTimestamp(SPAWN_TIMES.legendary.hour, SPAWN_TIMES.legendary.minute);
-    const mythicalTime = getDailyUnixTimestamp(SPAWN_TIMES.mythical.hour, SPAWN_TIMES.mythical.minute);
-    const luckyBlockTime = getDailyUnixTimestamp(SPAWN_TIMES.luckyBlock.hour, SPAWN_TIMES.luckyBlock.minute);
-    const amethystEggTime = getDailyUnixTimestamp(SPAWN_TIMES.amethystEgg.hour, SPAWN_TIMES.amethystEgg.minute);
+    const legendaryTime = getNextSpawnTime('legendary');
+    const mythicalTime = getNextSpawnTime('mythical');
+    const luckyTime = getNextSpawnTime('luckyBlock');
+    const amethystTime = getNextSpawnTime('amethystEgg');
     
     return `**Guaranteed Spawns:**
-Legendary: <t:${legendaryTime}:t> (<t:${legendaryTime}:R>)
-Mythical: <t:${mythicalTime}:t> (<t:${mythicalTime}:R>)
-Lucky Block: <t:${luckyBlockTime}:t> (<t:${luckyBlockTime}:R>)
-Amethyst Egg: <t:${amethystEggTime}:t> (<t:${amethystEggTime}:R>)
 
-*Times shown in your local timezone*
-*Updates every ${UPDATE_MINUTES} minutes*`;
+🟣 **Amethyst Egg** (Daily)
+<t:${amethystTime}:f> (<t:${amethystTime}:R>)
+
+🟠 **Lucky Block** (Every 30 min)
+<t:${luckyTime}:t> (<t:${luckyTime}:R>)
+
+🔵 **Mythical** (Every 60 min)
+<t:${mythicalTime}:t> (<t:${mythicalTime}:R>)
+
+🟢 **Legendary** (Every 5 min)
+<t:${legendaryTime}:t> (<t:${legendaryTime}:R>)
+
+*First spawn of each cycle starts at 5:00 PM (Amethyst) and 6:00 PM (others)*
+*Updates every minute*`;
 }
 
 // Update the Discord message
@@ -69,47 +103,37 @@ async function updateMessage() {
             console.log('📝 Initial message sent');
         }
     } catch (err) {
-        console.error('Error updating message:', err.message);
+        console.error('Error:', err.message);
         messageId = null;
     }
 }
 
-// --- Dummy Web Server for Render (keeps bot alive) ---
+// Keep-alive web server for Render
 const app = express();
 const port = process.env.PORT || 10000;
+app.get('/', (req, res) => res.send('Spawn timer bot running!'));
+app.listen(port, '0.0.0.0', () => console.log(`Web server on port ${port}`));
 
-app.get('/', (req, res) => {
-    res.send('Discord Spawn Timer Bot is running!');
-});
-
-app.listen(port, '0.0.0.0', () => {
-    console.log(`✅ Web server bound to port ${port}`);
-});
-// ----------------------------------------------------
-
-// Discord Bot Events
+// Discord bot ready event
 client.once('ready', () => {
     console.log(`✅ Bot online: ${client.user.tag}`);
-    console.log(`📝 Targeting channel ID: ${CHANNEL_ID}`);
-    console.log(`🕐 Spawn times (EST):`);
-    console.log(`   Legendary: 6:55 PM`);
-    console.log(`   Mythical: 7:00 PM`);
-    console.log(`   Lucky Block: 7:00 PM`);
-    console.log(`   Amethyst Egg: 5:00 PM`);
+    console.log(`📝 Channel ID: ${CHANNEL_ID}`);
+    console.log(`⏰ Schedule:`);
+    console.log(`   Amethyst: Every 24 hours starting at 5:00 PM`);
+    console.log(`   Lucky Block: Every 30 minutes starting at 6:00 PM`);
+    console.log(`   Mythical: Every 60 minutes starting at 6:00 PM`);
+    console.log(`   Legendary: Every 5 minutes starting at 6:00 PM`);
     
     setTimeout(updateMessage, 2000);
     setInterval(updateMessage, UPDATE_MINUTES * 60 * 1000);
 });
 
-client.on('error', (error) => {
-    console.error('Discord client error:', error);
-});
+client.on('error', console.error);
 
+// Start the bot
 const TOKEN = process.env.DISCORD_BOT_TOKEN;
-
 if (!TOKEN) {
     console.error('❌ DISCORD_BOT_TOKEN environment variable not set!');
     process.exit(1);
 }
-
 client.login(TOKEN);
