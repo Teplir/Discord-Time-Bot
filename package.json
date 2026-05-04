@@ -1,7 +1,7 @@
 {
   "name": "spawn-timer-bot",
   "version": "1.0.0",
-  "description": "Discord bot that updates spawn timers every X minutes",
+  "description": "Discord spawn timer bot",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
